@@ -53,32 +53,24 @@ def get_user_inputs():
     return char_set, num_set, filepath, chunk_size, workers
 
 
-use itertools::Itertools;
-use regex::Regex;
-
-fn generate_password_chunks(char_set: &[char], num_set: &[char]) -> Vec<String> {
-    let mut password_chunks = Vec::new();
-    let re = Regex::new(r"^[A-Z]{1,4}[0-9]{4}$").unwrap();
-
-    for i in 1..=4 {
-        let char_combos = char_set.iter().cloned().combinations(i);
-        for char_combo in char_combos {
-            let num_combos = num_set.iter().cloned().cartesian_product(
-                num_set.iter().cloned().cartesian_product(
-                    num_set.iter().cloned().cartesian_product(num_set.iter().cloned()),
-                ),
-            );
-            for num_combo in num_combos {
-                let password = char_combo.iter().chain(num_combo.iter()).collect::<String>();
-                if re.is_match(&password) {
-                    password_chunks.push(password);
-                }
-            }
-        }
-    }
-
-    password_chunks
-}
+def generate_password_chunks(char_set, num_set, chunk_size):
+    password_chunks = []
+    counter = 0
+    for i in range(1, 5):
+        char_combos = itertools.product(char_set, repeat=i)
+        for char_combo in char_combos:
+            num_combos = itertools.product(num_set, repeat=4)
+            for num_combo in num_combos:
+                password = ''.join(char_combo) + ''.join(num_combo)
+                if re.match('^[A-Z]{1,4}[0-9]{4}$', password):
+                    password_chunks.append(password)
+                    counter += 1
+                    if counter == chunk_size:
+                        yield password_chunks
+                        password_chunks = []
+                        counter = 0
+    if password_chunks:
+        yield password_chunks
 
 class PasswordCracked(Exception):
     def __init__(self, password, elapsed_time):
